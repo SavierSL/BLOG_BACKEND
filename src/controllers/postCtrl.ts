@@ -72,8 +72,11 @@ export const BlogPostCTRL: RequestHandler = async (req: Req, res: Res) => {
     // saveCover(post, img);
 
     const newPost: IBlogPost = new BlogPost(post);
-    newPost.save();
-    res.json(newPost);
+    await newPost.save();
+    const newUserPost: IBlogPost | null = await BlogPost.findById(newPost._id)
+      .select("-img")
+      .populate("user", ["name", "avatar", "email"]);
+    res.json(newUserPost);
   } catch (error) {
     res.status(400).json({ msg: error });
   }
@@ -84,7 +87,7 @@ export const GetAllPostCTRL = async (req: Req, res: Res) => {
   try {
     const posts: any = await BlogPost.find()
       .select("-img")
-      .populate("user", ["name", "avatar"]);
+      .populate("user", ["name", "avatar", "email"]);
 
     res.json(posts);
   } catch (error) {
@@ -94,9 +97,7 @@ export const GetAllPostCTRL = async (req: Req, res: Res) => {
 export const GetPostUser = async (req: Req, res: Res) => {
   const postID = ((req as any).params as { post_id: string }).post_id;
   try {
-    const user: IBlogPost | null = await BlogPost.findById(postID).select(
-      "-img"
-    );
+    const user: IBlogPost | null = await BlogPost.findById(postID);
     if (!user) {
       return res.status(400).json({ msg: [{ msg: "Cannot find user post" }] });
     }
